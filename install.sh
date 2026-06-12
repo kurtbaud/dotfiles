@@ -1,14 +1,24 @@
 #!/bin/bash
 # KGB dotfiles installer for GitHub Codespaces
-# Adds a line to ~/.bashrc that sources ~/dotfiles/.bashrc, if not already present.
-# Single source of truth: ~/dotfiles/.bashrc. No duplication, no strip/append.
-# Safe to rerun — idempotent.
+# For every file in ~/dotfiles/ matching .* (except . and ..), add a line
+# to the corresponding ~/.FILE that sources it, if not already present.
+# Single source of truth: ~/dotfiles/. No duplication. Safe to rerun.
 
-SOURCE_LINE='source ~/dotfiles/.bashrc'
+for f in ~/dotfiles/.*; do
+    base=$(basename "$f")
+    # Skip . and .. and the .git directory
+    [ "$base" = "." ] && continue
+    [ "$base" = ".." ] && continue
+    [ "$base" = ".git" ] && continue
+    [ -f "$f" ] || continue
 
-if ! grep -qF "$SOURCE_LINE" ~/.bashrc; then
-    echo "$SOURCE_LINE" >> ~/.bashrc
-    echo "Added '$SOURCE_LINE' to ~/.bashrc"
-else
-    echo "~/.bashrc already sources ~/dotfiles/.bashrc"
-fi
+    target=~/"$base"
+    line="source ~/dotfiles/$base"
+
+    if ! grep -qF "$line" "$target" 2>/dev/null; then
+        echo "$line" >> "$target"
+        echo "Added '$line' to $target"
+    else
+        echo "$target already sources ~/dotfiles/$base"
+    fi
+done
